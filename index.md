@@ -99,5 +99,9 @@ To watch the BSE tutorial on how to create a portfolio, click here.
 <iframe width="560" height="315" src="https://www.youtube.com/embed/xsjFLJVsTAk?si=yyqdQAVWjonmXYLz" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 # Starter Milestone
 <iframe width="560" height="315" src="https://www.youtube.com/embed/61sh7fCtAME?si=76WeBUf0ZRzxAlKb" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+**Challenges:**
+When soldering together my starter project I came across a couple of challenges. FIrst I had a hard time recongize whic screws where which whne finishing off my porject and screwing the case together. THe other rpoblem I had was soldering the wires. I ended up cutting my wire too much meaning that the ends of my wires were rubber which you can't solder cocmpletly 
+
+
 
 

@@ -15,7 +15,7 @@ You should comment out all portions of your portfolio that you have not complete
 **Replace the BlueStamp logo below with an image of yourself and your completed project. Follow the guide [here](https://tomcam.github.io/least-github-pages/adding-images-github-pages-site.html) if you need help.**
 
 ![Headstone Image](SaanviG.heic)
-
+<img src="SaanviG.heic" alt="window with the object recognition" height="400" width="500">
 <!--
 # Final Milestone
 
@@ -98,24 +98,34 @@ To watch the BSE tutorial on how to create a portfolio, click here.
 For my second milestone, I implemented object recognition using a pre-trained machine learning model and added text-to-speech (TTS) so the classification can be read aloud into an earpiece. I also set up a virtual environment to manage Python dependencies and isolate packages. I followed the tutorial "Running TensorFlow Lite Object Recognition on the Raspberry Pi 4 or Pi 5" by M. LeBlanc-Williams.
 **How I did This:**
 I started by setting up a virtual environment:
+```shell
 sudo apt install python3.11-venv
 python3 -m venv env --system-site-packages
 source env/bin/activate
+```
 Then, I connected and tested the Pi camera:
 libcamera-hello
 After verifying the camera worked,  I began by enabling the Pi Camera and installing dependencies:
+```shell
 sudo apt update
 sudo apt install python3-pip
 sudo pip3 install --upgrade setuptools
+```
 I then downloaded the TensorFlow Lite example repository:
+```shell
 git clone https://github.com/tensorflow/examples.git --depth 1
 cd examples/lite/examples/object_detection/raspberry_pi
+```
 From there, I ran the setup script provided:
+```shell
 sh setup.sh
+```
 This script installed required packages and libraries such as OpenCV, TensorFlow Lite runtime, and various system dependencies needed for image processing and model inference.
 
 Once everything was installed, I tested the camera again using:
+```shell
 libcamera-hello
+```
 
 **Challenge:**
 
@@ -147,6 +157,8 @@ I plan to move on to object recognition using machine learning and added text-to
 I chose the retro arcade console solder kit for my project because I enjoy classic gaming and wanted a hands-on experience building a device I can actually use for fun and entertainment. The kit works by assembling various electronic components on a printed circuit board (PCB) to create a fully functional arcade console. The core of the console is a microcontroller that runs the game software and processes inputs from the buttons and joystick. When a button is pressed, it closes a switch, completing the circuit and sending a signal to the microcontroller. The microcontroller then updates the display and game logic accordingly. The joystick operates similarly by providing directional inputs through switches that close when moved. The console outputs video and audio signals to a screen and speakers, allowing the player to see and hear the game in action. The assembly process primarily involved soldering the components such as buttons, joystick, resistors, capacitors, microcontroller, and connectors—onto the PCB. Careful soldering and component placement were essential to ensure the console worked correctly and was durable.
 **Figure:**
 The figure below illustrates how pressing a button closes a switch on the circuit board, completing the connection needed to send an input signal to the microcontroller. When the switch is open (button unpressed), no signal is sent.
+<img src="retro.webp" alt="window with the object recognition" height="400" width="500">
+
 **Components Used:**
 1. Printed Circuit Board (PCB)
 2. Microcontroller (e.g., ATmega or similar)
@@ -159,6 +171,8 @@ The figure below illustrates how pressing a button closes a switch on the circui
 9. Solder
 10. Connecting Wires
 11. Enclosure for the console housing
+    
+<img src="(OIP.webp" alt="window with the object recognition" height="400" width="500">   
 
 **Challenges:**
 When soldering together my starter project I came across two main challenges. FIrst I had a hard time recongize which screws where which whne finishing off my project and screwing the case together. THe other rpoblem I had was soldering the wires. I ended up cutting my wire too much meaning that the ends of my wires were rubber which you can't solder cocmpletly. I had to slowley cut out the rubber around the wire to reveal the metal part in order to solder properly. this took a long time since I had to make sure that i wouldnt accidently cut the whole wire off and have to restart. 

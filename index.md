@@ -96,7 +96,7 @@ One of the best parts about Github is that you can view how other people set up 
 To watch the BSE tutorial on how to create a portfolio, click here.
 -->
 # Second Milestone
-For my second milestone, I implemented object recognition using a pre-trained machine learning model and added text-to-speech (TTS) so the classification can be read aloud into an earpiece. I also set up a virtual environment to manage Python dependencies and isolate packages.
+For my second milestone, I implemented object recognition using a pre-trained machine learning model and added text-to-speech (TTS) so the classification can be read aloud into an earpiece. I also set up a virtual environment to manage Python dependencies and isolate packages. I followed the tutorial "Running TensorFlow Lite Object Recognition on the Raspberry Pi 4 or Pi 5" by M. LeBlanc-Williams.
 **How I did This:**
 I started by setting up a virtual environment:
 sudo apt install python3.11-venv
@@ -104,13 +104,20 @@ python3 -m venv env --system-site-packages
 source env/bin/activate
 Then, I connected and tested the Pi camera:
 libcamera-hello
-After verifying the camera worked, I created a project directory and installed OpenCV and PiCamera:
-cd project
-source env_tf/bin/activate
-sudo apt install -y build-essential cmake pkg-config libjpeg-dev libtiff5-dev libpng-dev libavcodec-dev libavformat-dev libswscale-dev libv4l-dev libxvidcore-dev libx264-dev libfontconfig1-dev libcairo2-dev libgdk-pixbuf2.0-dev libpango1.0-dev libgtk2.0-dev libgtk-3-dev libatlas-base-dev gfortran libhdf5-dev libhdf5-serial-dev libhdf5-103 libqt5gui5 libqt5webkit5 libqt5test5 python3-pyqt5 python3-dev
-pip install "picamera[array]"
-pip install opencv-python
-I then installed TensorFlow Lite and cloned the sample code:
+After verifying the camera worked,  I began by enabling the Pi Camera and installing dependencies:
+sudo apt update
+sudo apt install python3-pip
+sudo pip3 install --upgrade setuptools
+I then downloaded the TensorFlow Lite example repository:
+git clone https://github.com/tensorflow/examples.git --depth 1
+cd examples/lite/examples/object_detection/raspberry_pi
+From there, I ran the setup script provided:
+sh setup.sh
+This script installed required packages and libraries such as OpenCV, TensorFlow Lite runtime, and various system dependencies needed for image processing and model inference.
+
+Once everything was installed, I tested the camera again using:
+libcamera-hello
+
 **Challenge:**
 
 

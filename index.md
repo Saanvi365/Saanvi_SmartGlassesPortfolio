@@ -1,13 +1,12 @@
 # Smart Glasses
-Replace this text with a brief description (2-3 sentences) of your project. This description should draw the reader in and make them interested in what you've built. You can include what the biggest challenges, takeaways, and triumphs from completing the project were. As you complete your portfolio, remember your audience is less familiar than you are with all that your project entails!
+I built a pair of smart glasses that help visually impaired users navigate their environment by recognizing objects in real time and providing spoken feedback. Using a Raspberry Pi with a camera, machine learning, and text-to-speech technology, the glasses detect and announce nearby objects. The biggest challenges were setting up the hardware-software integration and fine-tuning the object recognition to be both accurate and timely, but overcoming these hurdles has made the project highly impactful.
 <!--
 You should comment out all portions of your portfolio that you have not completed yet, as well as any instructions:
-```HTML 
+
 <!--- This is an HTML comment in Markdown -->
 <!--- Anything between these symbols will not render on the published site -->
 
 
--->
 
 | **Engineer** | **School** | **Area of Interest** | **Grade** |
 |:--:|:--:|:--:|:--:|
@@ -143,8 +142,16 @@ I plan to move on to object recognition using machine learning and added text-to
 
 # Starter Milestone
 <iframe width="560" height="315" src="https://www.youtube.com/embed/61sh7fCtAME?si=76WeBUf0ZRzxAlKb" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
+**Summary**
+I chose the retro arcade console solder kit for my project because I enjoy classic gaming and wanted a hands-on experience building a device I can actually use for fun and entertainment. The kit works by assembling various electronic components on a printed circuit board (PCB) to create a fully functional arcade console. The core of the console is a microcontroller that runs the game software and processes inputs from the buttons and joystick. When a button is pressed, it closes a switch, completing the circuit and sending a signal to the microcontroller. The microcontroller then updates the display and game logic accordingly. The joystick operates similarly by providing directional inputs through switches that close when moved. The console outputs video and audio signals to a screen and speakers, allowing the player to see and hear the game in action. The assembly process primarily involved soldering the components such as buttons, joystick, resistors, capacitors, microcontroller, and connectors—onto the PCB. Careful soldering and component placement were essential to ensure the console worked correctly and was durable.
+
+
 **Challenges:**
 When soldering together my starter project I came across two main challenges. FIrst I had a hard time recongize which screws where which whne finishing off my project and screwing the case together. THe other rpoblem I had was soldering the wires. I ended up cutting my wire too much meaning that the ends of my wires were rubber which you can't solder cocmpletly. I had to slowley cut out the rubber around the wire to reveal the metal part in order to solder properly. this took a long time since I had to make sure that i wouldnt accidently cut the whole wire off and have to restart. 
+
+**Next:**
+I'm excited to work on my main project which is smart glasses!
 
 
 

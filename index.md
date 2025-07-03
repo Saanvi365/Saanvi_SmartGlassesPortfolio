@@ -15,7 +15,7 @@ You should comment out all portions of your portfolio that you have not complete
 **Replace the BlueStamp logo below with an image of yourself and your completed project. Follow the guide [here](https://tomcam.github.io/least-github-pages/adding-images-github-pages-site.html) if you need help.**
 
 ![Headstone Image](SaanviG.heic)
-<img src="SaanviG.heic" alt="window with the object recognition" height="400" width="500">
+<img src="SaanviG.heic" alt="Headshot" height="400" width="500">
 <!--
 # Final Milestone
 
@@ -157,7 +157,7 @@ I plan to move on to object recognition using machine learning and added text-to
 I chose the retro arcade console solder kit for my project because I enjoy classic gaming and wanted a hands-on experience building a device I can actually use for fun and entertainment. The kit works by assembling various electronic components on a printed circuit board (PCB) to create a fully functional arcade console. The core of the console is a microcontroller that runs the game software and processes inputs from the buttons and joystick. When a button is pressed, it closes a switch, completing the circuit and sending a signal to the microcontroller. The microcontroller then updates the display and game logic accordingly. The joystick operates similarly by providing directional inputs through switches that close when moved. The console outputs video and audio signals to a screen and speakers, allowing the player to see and hear the game in action. The assembly process primarily involved soldering the components such as buttons, joystick, resistors, capacitors, microcontroller, and connectors—onto the PCB. Careful soldering and component placement were essential to ensure the console worked correctly and was durable.
 **Figure:**
 The figure below illustrates how pressing a button closes a switch on the circuit board, completing the connection needed to send an input signal to the microcontroller. When the switch is open (button unpressed), no signal is sent.
-<img src="retro.webp" alt="window with the object recognition" height="400" width="500">
+<img src="retro.webp" alt="finished product" height="400" width="500">
 
 **Components Used:**
 1. Printed Circuit Board (PCB)
@@ -172,7 +172,7 @@ The figure below illustrates how pressing a button closes a switch on the circui
 10. Connecting Wires
 11. Enclosure for the console housing
     
-<img src="(OIP.webp" alt="window with the object recognition" height="400" width="500">   
+<img src="(OIP.webp" alt="materials" height="400" width="500">   
 
 **Challenges:**
 When soldering together my starter project I came across two main challenges. FIrst I had a hard time recongize which screws where which whne finishing off my project and screwing the case together. THe other rpoblem I had was soldering the wires. I ended up cutting my wire too much meaning that the ends of my wires were rubber which you can't solder cocmpletly. I had to slowley cut out the rubber around the wire to reveal the metal part in order to solder properly. this took a long time since I had to make sure that i wouldnt accidently cut the whole wire off and have to restart. 

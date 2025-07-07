@@ -125,7 +125,17 @@ sh setup.sh
 ```
 This script installed required packages and libraries such as OpenCV, TensorFlow Lite runtime, and various system dependencies needed for image processing and model inference.
 Then I installed all the required packages:
-
+```shell
+pip3 install --upgrade adafruit-python-shell
+wget https://raw.githubusercontent.com/adafruit/Raspberry-Pi-Installer-Scripts/master/raspi-blinka.py
+python3 raspi-blinka.py
+apt install -y python3-numpy python3-pillow python3-pygame
+apt install -y festival
+#tensor flow
+RELEASE=https://github.com/PINTO0309/Tensorflow-bin/releases/download/v2.15.0.post1/tensorflow-2.15.0.post1-cp311-none-linux_aarch64.whl
+CPVER=$(python --version | grep -Eo '3\.[0-9]{1,2}' | tr -d '.')
+pip install $(echo "$RELEASE" | sed -e "s/cp[0-9]\{3\}/CP$CPVER/g")
+```
 
 Once everything was installed, I tested the camera again using this code:
 ```shell

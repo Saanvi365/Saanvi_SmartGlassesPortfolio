@@ -331,7 +331,7 @@ python3 tests/pitft_labeled_output.py --tflite
 ```
 
 **Challenge:**
-
+I kept on using sudo at first to download my packages, but every time I did that, my computer would crash. That’s when I learned that since I was downloading these in my virtual environment, using sudo bypasses the environment entirely and installs or modifies packages at the system level, which can cause conflicts, permission issues, and even crash the Raspberry Pi. From then on, I made sure to activate my environment and use regular pip install commands inside it, keeping everything isolated, safer, and more stable.
 
 **Next:**
 Now that object detection and audio output are working, I plan on working on my modifications which include obstacle detection with vibration feedback using ultrasonic sensors and motors, voice command mode switching for hands-free control using offline voice recognition, and a battery monitoring system that gives spoken alerts like “Battery at 15%” to prevent sudden shutdowns.

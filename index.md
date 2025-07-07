@@ -98,6 +98,9 @@ To watch the BSE tutorial on how to create a portfolio, click here.
 # Third Milestone
 
 # Second Milestone
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/msAcJ9Dd6P4?si=iyv4Mc0ZYasIaY0i" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
 For my second milestone, I implemented object recognition using a pre-trained machine learning model and added text-to-speech (TTS) so the classification can be read aloud into an earpiece. I also set up a virtual environment to manage Python dependencies and isolate packages. I followed the tutorial "Running TensorFlow Lite Object Recognition on the Raspberry Pi 4 or Pi 5" by M. LeBlanc-Williams.
 **How I did This:**
 I started by setting up a virtual environment:

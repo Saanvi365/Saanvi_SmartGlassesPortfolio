@@ -110,7 +110,10 @@ python3 -m venv env --system-site-packages
 source env/bin/activate
 ```
 Then, I connected and tested the Pi camera:
+```shell
 libcamera-hello
+```
+
 After verifying the camera worked,  I began by enabling the Pi Camera and installing dependencies:
 ```shell
 sudo apt update

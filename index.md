@@ -384,7 +384,7 @@ The figure below illustrates how pressing a button closes a switch on the circui
 When soldering together my starter project I came across two main challenges. FIrst I had a hard time recongize which screws where which whne finishing off my project and screwing the case together. THe other rpoblem I had was soldering the wires. I ended up cutting my wire too much meaning that the ends of my wires were rubber which you can't solder cocmpletly. I had to slowley cut out the rubber around the wire to reveal the metal part in order to solder properly. this took a long time since I had to make sure that i wouldnt accidently cut the whole wire off and have to restart. 
 
 **Next:**
-I'm excited to work on my main project which is smart glasses!
+I'm excited to work on my main project which is the object detection smart glasses!
 
 
 

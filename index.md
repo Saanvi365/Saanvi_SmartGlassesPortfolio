@@ -14,6 +14,9 @@ I built a pair of smart glasses that help visually impaired users navigate their
 
 -->
 # Third Milestone
+<iframe width="560" height="315" src="https://www.youtube.com/embed/c_jwYHTCRQo?si=JgL7zhWAZ2tKjFEF" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
+For my third milestone, I used ultrasonic sensors (3) to sense the distance between an object in centimeters and then it says some stuff..ill finish this in a bit!
 
 # Second Milestone
 

@@ -16,7 +16,52 @@ I built a pair of smart glasses that help visually impaired users navigate their
 # Third Milestone
 <iframe width="560" height="315" src="https://www.youtube.com/embed/c_jwYHTCRQo?si=JgL7zhWAZ2tKjFEF" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
-For my third milestone, I used ultrasonic sensors (3) to sense the distance between an object in centimeters and then it says some stuff..ill finish this in a bit!
+FFor my third milestone, I added obstacle detection using three ultrasonic sensors (positioned on the left, center, and right of the smart glasses), which allowed the glasses to calculate the distance of nearby objects and announce their direction and distance out loud using text-to-speech (TTS). The smart glasses speak messages like "Obstacle 45 centimeters to the right" depending on sensor readings. I also integrated this with object detection, so if an object is detected at a short distance, it will say, for example, "Person detected 35 centimeters to the center." This feature combines object recognition with physical world proximity.
+
+**How I did this**
+To start, I used three HC-SR04 ultrasonic sensors connected to the Raspberry Pi’s GPIO pins. In my Python script
+```shell
+(object_detect_tts.py)
+```
+, I created a SENSORS dictionary at line 26 to define each sensor's TRIG and ECHO pins:
+```shell
+SENSORS = {
+    'left': {'TRIG': 20, 'ECHO': 21},
+    'center': {'TRIG': 23, 'ECHO': 24},
+    'right': {'TRIG': 16, 'ECHO': 2},
+}
+```
+
+I then initialized these pins with
+```shell
+GPIO.setup()
+```
+and 
+```shell
+GPIO.output()
+```
+between lines 31–35, setting all TRIG pins low to start. The main function that measures distance is get_distance() (defined at line 57), which sends a pulse using the TRIG pin, waits for the echo signal, calculates the pulse duration, and converts that to distance using the speed of sound. Next, I initialized the TensorFlow Lite interpreter for object detection at lines 41–46, loading the .tflite model and setting up input/output details. In the main loop (starting at line 139), I opened the Pi camera and began processing frames. For each frame, I used the detect_object() function (defined at line 86) to resize the frame to the expected input shape (line 93), convert it to a NumPy array and match the dtype required by the model (line 95), and then run inference and get the top label with confidence (lines 99–102). After detecting an object, I collected distance measurements from all three sensors using a dictionary comprehension at line 149.
+```shell
+distances = {
+    side: get_distance(pins['TRIG'], pins['ECHO'])
+    for side, pins in SENSORS.items()
+}
+```
+
+
+I then filtered these to check if any direction was under 100 cm. If yes, I chose the closest direction and constructed a message like "chair detected 55 centimeters to the left" or "Obstacle 38 centimeters to the center" depending on whether an object was recognized (starting at line 155).
+
+Text-to-speech is handled using pyttsx3 which I initialized at line 11, and I created a speak() function (line 14) to speak the messages out loud.
+
+I also added a debounce timer using last_spoken and debounce_time (line 143) to make sure the glasses don’t repeatedly speak the same thing too often.
+
+**Challenges**
+One major challenge I faced was debugging the ultrasonic sensor wiring and logic. Because I was using three sensors at once, there was a lot of interference between signals, especially when multiple TRIG pins were triggered simultaneously or ECHO pins shared wrong GPIO assignments. I solved this by isolating each sensor’s function call and spacing out the measurements using time.sleep(0.2) at the end of the main loop.
+
+Another issue was using the wrong ECHO pin for the right sensor. I had mistakenly used pin 26 but realized (after troubleshooting incorrect distance readings) that it needed to be GPIO pin 2 since pin 26 was fried. Once I corrected that, the readings became accurate.
+
+**Next Steps**
+Now that obstacle detection is integrated and directional audio feedback is working, my next steps involve expanding the smart glasses’ functionality through voice-controlled mode switching using a wake word like “Hey Glasses” with Porcupine. I plan to incorporate weather alerts, battery level monitoring, and ChatGPT voice interaction to allow users to ask questions or receive assistance through natural speech. To ensure seamless transitions between these features, I will implement threaded mode switching so each function runs independently and can be interrupted or switched on demand. I also aim to optimize all capabilities into a single, efficient, and thread-safe Python script with low latency and fast response times on the Raspberry Pi. Looking ahead, I’m exploring the addition of bone conduction speaker, which would make the glasses more adaptable in quiet or noisy environments.
 
 # Second Milestone
 

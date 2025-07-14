@@ -329,7 +329,7 @@ I plan to move on to object recognition using machine learning and added text-to
 I chose the retro arcade console solder kit for my project because I enjoy classic gaming and wanted a hands-on experience building a device I can actually use for fun and entertainment. The kit works by assembling various electronic components on a printed circuit board (PCB) to create a fully functional arcade console. The core of the console is a microcontroller that runs the game software and processes inputs from the buttons and joystick. When a button is pressed, it closes a switch, completing the circuit and sending a signal to the microcontroller. The microcontroller then updates the display and game logic accordingly. The joystick operates similarly by providing directional inputs through switches that close when moved. The console outputs video and audio signals to a screen and speakers, allowing the player to see and hear the game in action. The assembly process primarily involved soldering the components such as buttons, joystick, resistors, capacitors, microcontroller, and connectors—onto the PCB. Careful soldering and component placement were essential to ensure the console worked correctly and was durable.
 **Figure:**
 The figure below illustrates how pressing a button closes a switch on the circuit board, completing the connection needed to send an input signal to the microcontroller. When the switch is open (button unpressed), no signal is sent.
-<img src="retro.svg" alt="finished product" height="400" width="500">
+<img src="retro.png" alt="finished product" height="400" width="500">
 
 **Components Used:**
 1. Printed Circuit Board (PCB)

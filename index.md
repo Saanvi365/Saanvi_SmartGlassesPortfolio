@@ -9,7 +9,7 @@ I built a pair of smart glasses that help visually impaired users navigate their
 | Saanvi G | Leland | Electrical/Computer Engineering | Incoming Senior
 
 
-![Headstone Image](SaanviG.svg)
+![Headstone Image](SaanviG.png)
 <img src="SaanviG.hsvg" alt="Headshot" height="400" width="500">
 
 -->

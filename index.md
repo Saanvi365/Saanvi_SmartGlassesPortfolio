@@ -11,12 +11,13 @@ I built a pair of smart glasses that help visually impaired users navigate their
 
 ![Headstone Image](SaanviG.png)
 <img src="SaanviG.hsvg" alt="Headshot" height="400" width="500">
-
+# Fourth Milestone
+For my fourth milestone, I added a voice changer mode that would switch between all the modification: weather alerts, obstacle detection (with the ultraosnic sensor), object detection, and navigation. 
 -->
 # Third Milestone
 <iframe width="560" height="315" src="https://www.youtube.com/embed/c_jwYHTCRQo?si=JgL7zhWAZ2tKjFEF" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
-FFor my third milestone, I added obstacle detection using three ultrasonic sensors (positioned on the left, center, and right of the smart glasses), which allowed the glasses to calculate the distance of nearby objects and announce their direction and distance out loud using text-to-speech (TTS). The smart glasses speak messages like "Obstacle 45 centimeters to the right" depending on sensor readings. I also integrated this with object detection, so if an object is detected at a short distance, it will say, for example, "Person detected 35 centimeters to the center." This feature combines object recognition with physical world proximity.
+For my third milestone, I added obstacle detection using three ultrasonic sensors (positioned on the left, center, and right of the smart glasses), which allowed the glasses to calculate the distance of nearby objects and announce their direction and distance out loud using text-to-speech (TTS). The smart glasses speak messages like "Obstacle 45 centimeters to the right" depending on sensor readings. I also integrated this with object detection, so if an object is detected at a short distance, it will say, for example, "Person detected 35 centimeters to the center." This feature combines object recognition with physical world proximity.
 
 **How I did this**
 To start, I used three HC-SR04 ultrasonic sensors connected to the Raspberry Pi’s GPIO pins. In my Python script

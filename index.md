@@ -353,9 +353,1106 @@ When soldering together my starter project I came across two main challenges. FI
 **Next:**
 I'm excited to work on my main project which is the object detection smart glasses!
 
+# Code
+** ultrasonic sensor (obstacle detection) code**
+```shell
+import RPi.GPIO as GPIO
+import time
+import cv2
+import numpy as np
+import tflite_runtime.interpreter as tflite
+import sys
+from gtts import gTTS
+import pygame
+
+# === TTS Setup (gTTS + pygame) ===
+pygame.mixer.init()
+def speak(text):
+    print("🔊", text, flush=True)
+    try:
+        tts = gTTS(text=text, lang='en')
+        tts.save("/tmp/speak.mp3")
+        pygame.mixer.music.load("/tmp/speak.mp3")
+        pygame.mixer.music.play()
+        while pygame.mixer.music.get_busy():
+            time.sleep(0.1)
+    except Exception as e:
+        print(f"❌ Failed to speak: {e}")
+
+# === GPIO Setup ===
+GPIO.setwarnings(False)
+GPIO.setmode(GPIO.BCM)
+
+SENSORS = {
+    'left': {'TRIG': 20, 'ECHO': 21},
+    'center': {'TRIG': 23, 'ECHO': 24},
+    'right': {'TRIG': 16, 'ECHO': 2},
+}
+
+for pos in SENSORS.values():
+    GPIO.setup(pos['TRIG'], GPIO.OUT)
+    GPIO.setup(pos['ECHO'], GPIO.IN)
+    GPIO.output(pos['TRIG'], GPIO.LOW)
+
+time.sleep(1)
+
+# === Load TFLite Model ===
+MODEL_PATH = "/home/strawberry/Documents/object-glasses/object-glasses/env/model.tflite"
+
+LABELS = [
+    "person", "bicycle", "car", "motorcycle", "airplane",
+    "bus", "train", "truck", "boat", "traffic light",
+    "fire hydrant", "stop sign", "parking meter", "bench",
+    "bird", "cat", "dog", "horse", "sheep", "cow",
+    "elephant", "bear", "zebra", "giraffe", "backpack",
+    "umbrella", "handbag", "tie", "suitcase", "frisbee",
+    "skis", "snowboard", "sports ball", "kite", "baseball bat",
+    "baseball glove", "skateboard", "surfboard", "tennis racket",
+    "bottle", "wine glass", "cup", "fork", "knife", "spoon", "bowl",
+    "banana", "apple", "sandwich", "orange", "broccoli", "carrot",
+    "hot dog", "pizza", "donut", "cake", "chair", "couch",
+    "potted plant", "bed", "dining table", "toilet", "tv",
+    "laptop", "mouse", "remote", "keyboard", "cell phone",
+    "microwave", "oven", "toaster", "sink", "refrigerator",
+    "book", "clock", "vase", "scissors", "teddy bear",
+    "hair drier", "toothbrush"
+]
+
+interpreter = tflite.Interpreter(model_path=MODEL_PATH)
+interpreter.allocate_tensors()
+input_details = interpreter.get_input_details()
+output_details = interpreter.get_output_details()
+
+# === Distance Function ===
+def get_distance(trig, echo):
+    GPIO.output(trig, GPIO.LOW)
+    time.sleep(0.01)
+    GPIO.output(trig, GPIO.HIGH)
+    time.sleep(0.00001)
+    GPIO.output(trig, GPIO.LOW)
+
+    start_time = time.time()
+    timeout = start_time + 0.1
+
+    while GPIO.input(echo) == 0:
+        if time.time() > timeout:
+            return 999
+    pulse_start = time.time()
+
+    timeout = pulse_start + 0.1
+    while GPIO.input(echo) == 1:
+        if time.time() > timeout:
+            return 999
+    pulse_end = time.time()
+
+    pulse_duration = pulse_end - pulse_start
+    distance = (pulse_duration * 34300) / 2
+    return round(distance, 2)
+
+# === Object Detection ===
+def detect_object(frame):
+    expected_shape = input_details[0]['shape']
+    height, width = expected_shape[1], expected_shape[2]
+    dtype = input_details[0]['dtype']
+
+    if len(frame.shape) == 2 or frame.shape[2] == 1:
+        frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2BGR)
+
+    img = cv2.resize(frame, (width, height))
+    input_data = np.expand_dims(img, axis=0).astype(dtype)
+
+    interpreter.set_tensor(input_details[0]['index'], input_data)
+    interpreter.invoke()
+
+    boxes = interpreter.get_tensor(output_details[0]['index'])[0]
+    classes = interpreter.get_tensor(output_details[1]['index'])[0]
+    scores = interpreter.get_tensor(output_details[2]['index'])[0]
+    num = int(interpreter.get_tensor(output_details[3]['index'])[0])
+
+    best_score = 0.0
+    best_class = -1
+    for i in range(num):
+        if scores[i] > best_score and scores[i] > 0.3:
+            best_score = scores[i]
+            best_class = int(classes[i])
+
+    if best_class >= 0 and best_class < len(LABELS):
+        return LABELS[best_class], best_score
+    return None, None
+
+# === Main Distance + Detection Mode ===
+def run_distance_mode():
+    print("🚀 Distance mode started", flush=True)
+    cap = cv2.VideoCapture(0)
+
+    if not cap.isOpened():
+        print("❌ Camera failed to open", flush=True)
+        return
+
+    last_spoken = time.time()
+    debounce_time = 3
+    last_spoken_msg = ""
+
+    try:
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                continue
+
+            obj_label, confidence = detect_object(frame)
+            distances = {
+                side: get_distance(pins['TRIG'], pins['ECHO'])
+                for side, pins in SENSORS.items()
+            }
+
+            if time.time() - last_spoken > debounce_time:
+                valid = {d: dist for d, dist in distances.items() if dist < 100 and dist != 999}
+                if valid:
+                    direction = min(valid, key=valid.get)
+                    dist = valid[direction]
+
+                    if obj_label:
+                        msg = f"{obj_label} detected {int(dist)} centimeters to the {direction}"
+                    else:
+                        msg = f"Obstacle {int(dist)} centimeters to the {direction}"
+
+                    if msg != last_spoken_msg:
+                        speak(msg)
+                        last_spoken = time.time()
+                        last_spoken_msg = msg
+
+            time.sleep(0.2)
+
+    except KeyboardInterrupt:
+        print("🛑 Distance mode stopped by user.", flush=True)
+
+    finally:
+        cap.release()
+        GPIO.cleanup()
+
+# === Allow standalone run ===
+if __name__ == "__main__":
+    run_distance_mode()
+
+```
+** nagivation code**
+```shell
+import os
+import time
+import re
+import requests
+import speech_recognition as sr
+from gtts import gTTS
+import pygame
+
+# === Google API Key ===
+GOOGLE_API_KEY = 'AIzaSyClBTJqcQHmNeuDqPvUAyyrp9TmJmXx0Mw'
+
+# === Initialize pygame mixer for TTS ===
+pygame.mixer.init()
+
+# === TTS function using gTTS ===
+def speak(text):
+    print("Speaking:", text)
+    try:
+        tts = gTTS(text=text, lang='en')
+        tts.save("/tmp/speak.mp3")
+        pygame.mixer.music.load("/tmp/speak.mp3")
+        pygame.mixer.music.play()
+        while pygame.mixer.music.get_busy():
+            time.sleep(0.1)
+    except Exception as e:
+        print(f"❌ Failed to speak: {e}")
+
+# === Speech recognition function ===
+def listen(prompt=None):
+    recognizer = sr.Recognizer()
+    mic = sr.Microphone()
+
+    if prompt:
+        speak(prompt)
+
+    with mic as source:
+        recognizer.adjust_for_ambient_noise(source)
+        audio = recognizer.listen(source)
+
+    try:
+        text = recognizer.recognize_google(audio)
+        print(f"Heard: {text}")
+        return text.lower()
+    except sr.UnknownValueError:
+        speak("Sorry, I didn't catch that.")
+    except sr.RequestError:
+        speak("Speech recognition service is not available.")
+    return None
+
+# === Get coordinates from address ===
+def get_coordinates(address):
+    geocode_url = "https://maps.googleapis.com/maps/api/geocode/json"
+    params = {
+        "address": address,
+        "key": GOOGLE_API_KEY
+    }
+    res = requests.get(geocode_url, params=params)
+    if res.status_code != 200 or not res.json()["results"]:
+        speak("Could not find the location: " + address)
+        return None
+    location = res.json()["results"][0]["geometry"]["location"]
+    return location["lat"], location["lng"]
+
+# === Get walking directions ===
+def get_walking_directions(origin_lat, origin_lng, destination_address):
+    directions_url = "https://maps.googleapis.com/maps/api/directions/json"
+    params = {
+        "origin": f"{origin_lat},{origin_lng}",
+        "destination": destination_address,
+        "mode": "walking",
+        "key": GOOGLE_API_KEY
+    }
+    res = requests.get(directions_url, params=params)
+    if res.status_code != 200 or not res.json()["routes"]:
+        speak("Failed to get directions.")
+        return []
+
+    steps = res.json()["routes"][0]["legs"][0]["steps"]
+    directions = []
+    for step in steps:
+        instruction = re.sub('<[^<]+?>', '', step["html_instructions"])
+        directions.append(instruction)
+    return directions
+
+# === Wait for navigation command ===
+def wait_for_command():
+    while True:
+        command = listen("Say 'next', 'repeat', or 'back'.")
+        if command:
+            if "next" in command:
+                return "next"
+            elif "repeat" in command:
+                return "repeat"
+            elif "back" in command:
+                return "back"
+            else:
+                speak("Command not recognized. Please say 'next', 'repeat', or 'back'.")
+        else:
+            speak("Please say a command.")
+
+# === Main logic ===
+def main():
+    origin_address = listen("What is your current location?")
+    if not origin_address:
+        return
+    origin_coords = get_coordinates(origin_address)
+    if not origin_coords:
+        return
+    origin_lat, origin_lng = origin_coords
+
+    destination_address = listen("Where do you want to go?")
+    if not destination_address:
+        return
+
+    steps = get_walking_directions(origin_lat, origin_lng, destination_address)
+    if steps:
+        speak("Here are your walking directions. Say 'next' to go forward, 'repeat' to hear the step again, or 'back' to go back.")
+        index = 0
+        while 0 <= index < len(steps):
+            speak(f"Step {index + 1}: {steps[index]}")
+            command = wait_for_command()
+
+            if command == "next":
+                index += 1
+            elif command == "repeat":
+                continue  # Say the same step again
+            elif command == "back":
+                if index > 0:
+                    index -= 1
+                else:
+                    speak("You're at the first step.")
+
+        speak("You have arrived at your destination.")
+    else:
+        speak("Sorry, I couldn't find a walking route.")
+
+if __name__ == "__main__":
+    main()
+
+```
+** weather alerts code**
+```shell
+import requests
+from datetime import datetime
+import pytz
+import time
+import threading
+import speech_recognition as sr
+from gtts import gTTS
+import pygame
+
+class WeatherAssistant:
+    def __init__(self):
+        # === CONFIGURATION ===
+        self.API_KEY = '90cf24e49aba700e6c94c8d4677f20a4'
+        self.CITY = 'San Jose'
+        self.LAT = 37.3394
+        self.LON = -121.8950
+        self.UNITS = 'imperial'
+        self.TIMEZONE = 'America/Los_Angeles'
+
+        # === Speech Recognizer Setup ===
+        self.recognizer = sr.Recognizer()
+
+        # === TTS Setup using gTTS ===
+        pygame.mixer.init()
+
+    def speak(self, text):
+        print("🔊", text)
+        try:
+            tts = gTTS(text=text, lang='en')
+            tts.save("/tmp/speak.mp3")
+            pygame.mixer.music.load("/tmp/speak.mp3")
+            pygame.mixer.music.play()
+            while pygame.mixer.music.get_busy():
+                time.sleep(0.1)
+        except Exception as e:
+            print(f"❌ TTS error: {e}")
+
+    def listen_mode(self):
+        self.speak("Which mode would you like? You can say: full report, UV and air only, or weather and clothing only.")
+        with sr.Microphone() as source:
+            self.recognizer.adjust_for_ambient_noise(source)
+            print("🎤 Listening using SpeechRecognition...")
+            try:
+                audio = self.recognizer.listen(source, timeout=8, phrase_time_limit=5)
+                text = self.recognizer.recognize_google(audio).lower()
+                print("🎧 Heard:", text)
+                if "uv" in text and "air" in text:
+                    return "uv_air"
+                elif "weather" in text or "clothing" in text:
+                    return "weather_clothing"
+                elif "full" in text:
+                    return "full"
+                else:
+                    self.speak("Sorry, I didn't understand that. I'll give you the full report.")
+                    return "full"
+            except sr.WaitTimeoutError:
+                self.speak("Timeout, please try again.")
+                return self.manual_mode_input()
+            except sr.UnknownValueError:
+                self.speak("Sorry, I couldn't understand. Please try again.")
+                return self.manual_mode_input()
+            except sr.RequestError as e:
+                print("API error:", e)
+                self.speak("Speech service is unavailable. Please type your mode.")
+                return self.manual_mode_input()
+
+    def manual_mode_input(self):
+        print("Please type mode (full, uv_air, weather_clothing):")
+        mode = input().strip().lower()
+        return mode if mode in ["full", "uv_air", "weather_clothing"] else "full"
+
+    def get_weather(self):
+        url = f"https://api.openweathermap.org/data/2.5/weather?q={self.CITY}&appid={self.API_KEY}&units={self.UNITS}"
+        try:
+            return requests.get(url).json()
+        except Exception as e:
+            print("Weather error:", e)
+            return None
+
+    def get_air_quality(self):
+        url = f"http://api.openweathermap.org/data/2.5/air_pollution?lat={self.LAT}&lon={self.LON}&appid={self.API_KEY}"
+        try:
+            return requests.get(url).json()
+        except Exception as e:
+            print("AQI error:", e)
+            return None
+
+    def get_onecall(self):
+        url = f"https://api.openweathermap.org/data/2.5/onecall?lat={self.LAT}&lon={self.LON}&exclude=minutely,alerts&appid={self.API_KEY}&units={self.UNITS}"
+        try:
+            return requests.get(url).json()
+        except Exception as e:
+            print("OneCall error:", e)
+            return None
+
+    def interpret_aqi(self, aqi):
+        return {
+            1: "Good",
+            2: "Fair",
+            3: "Moderate",
+            4: "Poor",
+            5: "Very Poor"
+        }.get(aqi, "Unknown")
+
+    def interpret_uv(self, uv):
+        if uv <= 2:
+            return "Low – minimal risk."
+        elif uv <= 5:
+            return "Moderate – sunglasses and sunscreen recommended."
+        elif uv <= 7:
+            return "High – wear SPF and avoid direct sunlight."
+        elif uv <= 10:
+            return "Very High – use full sun protection and seek shade."
+        else:
+            return "Extreme – stay indoors if possible."
+
+    def clothing_advice(self, feels_like):
+        if feels_like < 50:
+            return "It feels cold. Wear a warm jacket or coat."
+        elif feels_like < 70:
+            return "It feels mild. A light jacket or sweater should be fine."
+        elif feels_like < 85:
+            return "It feels warm. Dress comfortably and stay hydrated."
+        else:
+            return "It feels very hot. Wear light clothing and avoid long sun exposure."
+
+    def allergy_advice(self, aqi):
+        return "Air quality is moderate or worse. If you have allergies or asthma, consider staying indoors or wearing a mask." if aqi >= 3 else "Air quality is okay for most people."
+
+    def humidity_advice(self, humidity):
+        return f"Humidity is high at {humidity}%. It may feel sticky and uncomfortable." if humidity > 70 else None
+
+    def forecast_change_alert(self, hourly, current_desc):
+        for hour in hourly[:6]:
+            weather = hour['weather'][0]['main'].lower()
+            if any(x in weather for x in ["rain", "storm", "snow"]) and not any(x in current_desc.lower() for x in ["rain", "storm", "snow"]):
+                return "Although it's clear now, rain or storms are expected later today. You might want to take an umbrella."
+        return None
+
+    def format_time(self, unix_time):
+        tz = pytz.timezone(self.TIMEZONE)
+        return datetime.fromtimestamp(unix_time, tz).strftime('%I:%M %p')
+
+    def generate_report(self, mode):
+        weather = self.get_weather()
+        air = self.get_air_quality()
+        onecall = self.get_onecall()
+
+        desc = ""
+        if mode in ["weather_clothing", "full"] and weather:
+            temp = int(weather['main']['temp'])
+            feels_like = int(weather['main']['feels_like'])
+            desc = weather['weather'][0]['description']
+            humidity = int(weather['main']['humidity'])
+            sunrise = self.format_time(weather['sys']['sunrise'])
+            sunset = self.format_time(weather['sys']['sunset'])
+
+            self.speak(f"The current temperature is {temp} degrees, but it feels like {feels_like} degrees with {desc}.")
+            self.speak(self.clothing_advice(feels_like))
+
+            humidity_msg = self.humidity_advice(humidity)
+            if humidity_msg:
+                self.speak(humidity_msg)
+
+            self.speak(f"The sun rises at {sunrise} and sets at {sunset}.")
+
+        if onecall and 'hourly' in onecall:
+            forecast_msg = self.forecast_change_alert(onecall['hourly'], desc)
+            if forecast_msg:
+                self.speak(forecast_msg)
+
+        if mode in ["uv_air", "full"] and air:
+            aqi = air['list'][0]['main']['aqi']
+            self.speak(f"The air quality index is {aqi}, which is considered {self.interpret_aqi(aqi)}.")
+            self.speak(self.allergy_advice(aqi))
+
+        if mode in ["uv_air", "full"] and onecall:
+            current = onecall.get('current')
+            if current and 'uvi' in current:
+                uv = current['uvi']
+                self.speak(f"The UV index is {uv:.1f}. {self.interpret_uv(uv)}")
+            else:
+                self.speak("UV information is not currently available.")
+
+    def run(self):
+        mode = self.listen_mode()
+        self.generate_report(mode)
+        try:
+            while True:
+                time.sleep(1)
+        except KeyboardInterrupt:
+            print("Exiting...")
+
+def run_weather_mode():
+    assistant = WeatherAssistant()
+    assistant.run()
+
+if __name__ == "__main__":
+    run_weather_mode()
+
+```
+
+**gemini code (need to be fixed)**
+```shell
+import google.generativeai as genai
+import speech_recognition as sr
+from gtts import gTTS
+import pygame
+import os
+import tempfile
+
+class GeminiAssistant:
+    def __init__(self, api_key):
+        # === CONFIG ===
+        self.api_key = api_key
+
+        # === INIT Gemini ===
+        genai.configure(api_key=self.api_key)
+        self.model = genai.GenerativeModel('gemini-1.5-flash')
+
+        # === INIT gTTS and Pygame ===
+        pygame.mixer.init()
+
+    def speak(self, text):
+        print("🤖 Gemini says:", text)
+        tts = gTTS(text=text, lang='en')
+        with tempfile.NamedTemporaryFile(delete=True, suffix='.mp3') as fp:
+            tts.save(fp.name)
+            pygame.mixer.music.load(fp.name)
+            pygame.mixer.music.play()
+            while pygame.mixer.music.get_busy():
+                continue
+
+    def listen(self):
+        recognizer = sr.Recognizer()
+        mic = sr.Microphone()
+        print("🎤 Listening... Speak now!")
+        with mic as source:
+            recognizer.adjust_for_ambient_noise(source)
+            try:
+                audio = recognizer.listen(source, timeout=5, phrase_time_limit=10)
+            except sr.WaitTimeoutError:
+                print("⏰ Listening timed out.")
+                return None
+
+        try:
+            query = recognizer.recognize_google(audio)
+            print("You asked:", query)
+            return query
+        except sr.UnknownValueError:
+            self.speak("Sorry, I couldn't understand you.")
+        except sr.RequestError as e:
+            self.speak("Speech recognition is unavailable.")
+            print("Error:", e)
+
+        return None
+
+    def ask_once(self):
+        user_input = self.listen()
+        if not user_input:
+            return None
+
+        if user_input.lower() in ["stop", "exit", "quit"]:
+            self.speak("Goodbye!")
+            return "exit"
+
+        try:
+            response = self.model.generate_content(user_input)
+            reply = response.candidates[0].content.parts[0].text
+            self.speak(reply)
+            return reply
+        except Exception as e:
+            print("❌ Error from Gemini:", e)
+            self.speak("Something went wrong talking to Gemini.")
+            return None
+ 
+```
+**old gemini code**
+```shell
+import google.generativeai as genai
+import speech_recognition as sr
+import pyttsx3
+
+class GeminiAssistant:
+    def __init__(self, api_key):
+        # === CONFIG ===
+        self.api_key = api_key
+
+        # === INIT Gemini ===
+        genai.configure(api_key=self.api_key)
+        self.model = genai.GenerativeModel('gemini-1.5-flash')
+
+        # === INIT TTS ===
+        self.engine = pyttsx3.init()
+        self.engine.setProperty("rate", 150)
+
+    def speak(self, text):
+        print("🤖 Gemini says:", text)
+        self.engine.say(text)
+        self.engine.runAndWait()
+
+    def listen(self):
+        recognizer = sr.Recognizer()
+        mic = sr.Microphone()
+        print("🎤 Listening... Speak now!")
+        with mic as source:
+            recognizer.adjust_for_ambient_noise(source)
+            try:
+                audio = recognizer.listen(source, timeout=5, phrase_time_limit=10)
+            except sr.WaitTimeoutError:
+                print("⏰ Listening timed out.")
+                return None
+
+        try:
+            query = recognizer.recognize_google(audio)
+            print("You asked:", query)
+            return query
+        except sr.UnknownValueError:
+            self.speak("Sorry, I couldn't understand you.")
+        except sr.RequestError as e:
+            self.speak("Speech recognition is unavailable.")
+            print("Error:", e)
+
+        return None
+
+    def ask_once(self):
+        user_input = self.listen()
+        if not user_input:
+            return None
+
+        if user_input.lower() in ["stop", "exit", "quit"]:
+            self.speak("Goodbye!")
+            return "exit"
+
+        try:
+            response = self.model.generate_content(user_input)
+            reply = response.candidates[0].content.parts[0].text
+            self.speak(reply)
+            return reply
+        except Exception as e:
+            print("❌ Error from Gemini:", e)
+            self.speak("Something went wrong talking to Gemini.")
+            return None
+
+```
+**object detcetion code**
+```shell
+# object_detection_runner.py
+
+import time
+import logging
+import pygame
+import os
+import subprocess
+import sys
+import numpy as np
+import signal
+import argparse
+from gtts import gTTS  # ✅ gTTS import added
+
+from rpi_vision.agent.capturev2 import PiCameraStream
+from rpi_vision.models.mobilenet_v2 import MobileNetV2Base
+
+CONFIDENCE_THRESHOLD = 0.5
+PERSISTANCE_THRESHOLD = 0.25
+
+# Prevent quitting on SIGHUP
+def dont_quit(signal, frame):
+    print('Caught signal:', signal)
+signal.signal(signal.SIGHUP, dont_quit)
+
+class ObjectDetectionRunner:
+    def __init__(self, include_top=True, tflite=False, rotation=0):
+        self.include_top = include_top
+        self.tflite = tflite
+        self.rotation = rotation
+        self.last_seen = [None] * 10
+        self.last_spoken = None
+        self.capture_manager = None
+        self.screen = None
+        self.buffer = None
+
+    def _init_display(self):
+        pygame.init()
+        self.screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+        pygame.mouse.set_visible(False)
+        self.screen.fill((0, 0, 0))
+        try:
+            splash_path = os.path.join(os.path.dirname(sys.argv[0]), 'bchatsplash.bmp')
+            splash = pygame.image.load(splash_path)
+            splash = pygame.transform.rotate(splash, self.rotation)
+            splash = pygame.transform.scale(
+                splash,
+                (min(self.screen.get_width(), self.screen.get_height()),) * 2
+            )
+            self.screen.blit(
+                splash,
+                ((self.screen.get_width() - splash.get_width()) // 2,
+                 (self.screen.get_height() - splash.get_height()) // 2)
+            )
+        except pygame.error:
+            pass
+        pygame.display.update()
+
+    def run(self):
+        logging.basicConfig()
+        logging.getLogger().setLevel(logging.INFO)
+
+        self._init_display()
+        self.capture_manager = PiCameraStream(preview=False)
+        self.capture_manager.start()
+
+        if self.rotation in (0, 180):
+            self.buffer = pygame.Surface((self.screen.get_width(), self.screen.get_height()))
+        else:
+            self.buffer = pygame.Surface((self.screen.get_height(), self.screen.get_width()))
+
+        scale = max(self.buffer.get_height() // self.capture_manager.resolution[1], 1)
+        scaled_resolution = tuple([x * scale for x in self.capture_manager.resolution])
+
+        smallfont = pygame.font.Font(None, 24 * scale)
+        medfont = pygame.font.Font(None, 36 * scale)
+        bigfont = pygame.font.Font(None, 48 * scale)
+
+        model = MobileNetV2Base(include_top=self.include_top)
+
+        try:
+            while not self.capture_manager.stopped:
+                if self.capture_manager.frame is None:
+                    continue
+
+                self.buffer.fill((0, 0, 0))
+                frame = self.capture_manager.read()
+                previewframe = np.ascontiguousarray(self.capture_manager.frame)
+                img = pygame.image.frombuffer(previewframe, self.capture_manager.resolution, 'RGB')
+                img = pygame.transform.scale(img, scaled_resolution)
+
+                cropped_region = (
+                    (img.get_width() - self.buffer.get_width()) // 2,
+                    (img.get_height() - self.buffer.get_height()) // 2,
+                    self.buffer.get_width(),
+                    self.buffer.get_height()
+                )
+                self.buffer.blit(img, (0, 0), cropped_region)
+
+                timestamp = time.monotonic()
+                prediction = model.tflite_predict(frame)[0] if self.tflite else model.predict(frame)[0]
+                delta = time.monotonic() - timestamp
+                fps_text = f"{1/delta:.1f} FPS"
+                fpstext_surface = smallfont.render(fps_text, True, (255, 0, 0))
+                self.buffer.blit(fpstext_surface, fpstext_surface.get_rect(topright=(self.buffer.get_width() - 10, 10)))
+
+                try:
+                    temp = int(open("/sys/class/thermal/thermal_zone0/temp").read()) / 1000
+                    temptext = f"{int(temp)}°C"
+                    temptext_surface = smallfont.render(temptext, True, (255, 0, 0))
+                    self.buffer.blit(temptext_surface, temptext_surface.get_rect(topright=(self.buffer.get_width() - 10, 30)))
+                except OSError:
+                    pass
+
+                for p in prediction:
+                    label, name, conf = p
+                    if conf > CONFIDENCE_THRESHOLD:
+                        print("Detected:", name)
+                        self.last_seen.append(name)
+                        self.last_seen.pop(0)
+                        if self.last_seen.count(name) / len(self.last_seen) > PERSISTANCE_THRESHOLD:
+                            detecttext = name.replace("_", " ")
+                            for f in (bigfont, medfont, smallfont):
+                                if f.size(detecttext)[0] < self.screen.get_width():
+                                    detecttextfont = f
+                                    break
+                            else:
+                                detecttextfont = smallfont
+
+                            detect_color = (0, 255, 0)
+                            surface = detecttextfont.render(detecttext, True, detect_color)
+                            self.buffer.blit(surface, surface.get_rect(center=(self.buffer.get_width() // 2, self.buffer.get_height() - detecttextfont.size(detecttext)[1])))
+
+                            if self.last_spoken != detecttext:
+                                tts = gTTS(text=detecttext)
+                                tts.save("/tmp/detect.mp3")
+                                subprocess.call("mpg123 /tmp/detect.mp3", shell=True)
+                                self.last_spoken = detecttext
+                        break
+                else:
+                    self.last_seen.append(None)
+                    self.last_seen.pop(0)
+                    if all(x is None for x in self.last_seen):
+                        self.last_spoken = None
+
+                self.screen.blit(pygame.transform.rotate(self.buffer, self.rotation), (0, 0))
+                pygame.display.update()
+
+        except KeyboardInterrupt:
+            print("🛑 Interrupted by user.")
+        finally:
+            self.capture_manager.stop()
+            pygame.quit()
+
+# Optional CLI for standalone run
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--include-top', type=bool, default=True)
+    parser.add_argument('--tflite', action='store_true', default=False)
+    parser.add_argument('--rotation', type=int, choices=[0, 90, 180, 270], default=0)
+    args = parser.parse_args()
+
+    runner = ObjectDetectionRunner(include_top=args.include_top, tflite=args.tflite, rotation=args.rotation)
+    runner.run()
+
+def run_object_mode():
+    runner = ObjectDetectionRunner(include_top=True, tflite=False, rotation=0)
+    runner.run()
+
+```
+**voice mode changer code**
+```shell
+import time
+import object_detect_tts
+import pitft_labeled_output
+import weather_alerts
+import gemini
+from gemini import GeminiAssistant
+import button_camera
+import navigation
+from navigation import NavigationMode
+
+import speech_recognition as sr
+from gtts import gTTS
+import pygame
+import tempfile
+import os
+
+# === TTS setup with gTTS ===
+pygame.mixer.init()
+
+def speak(text):
+    print("🤖", text)
+    tts = gTTS(text=text, lang='en')
+    with tempfile.NamedTemporaryFile(delete=True, suffix='.mp3') as fp:
+        tts.save(fp.name)
+        pygame.mixer.music.load(fp.name)
+        pygame.mixer.music.play()
+        while pygame.mixer.music.get_busy():
+            time.sleep(0.1)
+
+# === Speech Recognition setup ===
+recognizer = sr.Recognizer()
+mic = sr.Microphone()
+
+def listen_with_timeout(timeout=10):
+    speak("I'm listening...")
+    print("🎤 Listening for command...")
+    with mic as source:
+        recognizer.adjust_for_ambient_noise(source)
+        try:
+            audio = recognizer.listen(source, timeout=timeout, phrase_time_limit=8)
+        except sr.WaitTimeoutError:
+            speak("I didn't hear anything. Returning to idle.")
+            return None
+
+    try:
+        text = recognizer.recognize_google(audio).lower()
+        print("Heard:", text)
+        return text
+    except sr.UnknownValueError:
+        speak("Sorry, I didn't catch that.")
+    except sr.RequestError as e:
+        speak("Speech recognition is unavailable.")
+        print("Error:", e)
+    return None
+
+def wait_for_wake_word(wake_word="hey glasses"):
+    print("👂 Waiting for wake word...")
+    while True:
+        with mic as source:
+            recognizer.adjust_for_ambient_noise(source)
+            try:
+                audio = recognizer.listen(source, timeout=15, phrase_time_limit=5)
+            except sr.WaitTimeoutError:
+                continue
+
+        try:
+            text = recognizer.recognize_google(audio).lower()
+            print("Heard:", text)
+            if wake_word in text:
+                speak("Yes?")
+                return
+        except sr.UnknownValueError:
+            continue
+        except sr.RequestError as e:
+            print("Error with speech recognition:", e)
+            continue
+
+def run_mode(mode):
+    if mode == "distance":
+        speak("Entering distance mode.")
+        object_detect_tts.run_distance_mode()
+
+    elif mode == "object":
+        speak("Entering object detection mode.")
+        pitft_labeled_output.run_object_mode()
+
+    elif mode == "weather":
+        speak("Fetching weather alerts.")
+        weather_alerts.run_weather_mode()
+
+    elif mode == "gemini":
+        speak("Opening Gemini Assistant.")
+        from gemini import GeminiAssistant
+        assistant = GeminiAssistant(api_key="YOUR_API_KEY")  # Replace with actual key
+
+        while True:
+            reply = assistant.ask_once()
+            if reply == "exit":
+                break
+            if not reply:
+                assistant.speak("Repeat that.")
+            else:
+                break  # Exit after one successful answer
+
+    elif mode == "navigation":
+        speak("Opening Navigation system.")
+        navigation_mode = NavigationMode()
+        navigation_mode.run()
+
+    else:
+        speak(f"I don't recognize the mode: {mode}")
+
+if __name__ == "__main__":
+    speak("Voice Mode Switcher is active.")
+    try:
+        while True:
+            wait_for_wake_word()
+            mode = listen_with_timeout()
+            if mode is None:
+                continue
+            if any(word in mode for word in ["quit", "exit", "stop"]):
+                speak("Goodbye.")
+                break
+            run_mode(mode)
+    except KeyboardInterrupt:
+        speak("Exiting.")
+
+```
+**old voice mode changer**
+```shell
+import time
+import object_detect_tts
+import pitft_labeled_output
+import weather_alerts
+import gemini
+from gemini import GeminiAssistant
+import button_camera
+import navigation
+from navigation import NavigationMode
+
+import speech_recognition as sr
+import pyttsx3
+
+# === TTS setup ===
+tts = pyttsx3.init()
+tts.setProperty("rate", 150)
+
+def speak(text):
+    print("🤖", text)
+    tts.say(text)
+    tts.runAndWait()
+
+# === Speech Recognition setup ===
+recognizer = sr.Recognizer()
+mic = sr.Microphone()
+
+def listen_with_timeout(timeout=10):
+    speak("I'm listening...")
+    print("🎤 Listening for command...")
+    with mic as source:
+        recognizer.adjust_for_ambient_noise(source)
+        try:
+            audio = recognizer.listen(source, timeout=timeout, phrase_time_limit=8)
+        except sr.WaitTimeoutError:
+            speak("I didn't hear anything. Returning to idle.")
+            return None
+
+    try:
+        text = recognizer.recognize_google(audio).lower()
+        print("Heard:", text)
+        return text
+    except sr.UnknownValueError:
+        speak("Sorry, I didn't catch that.")
+    except sr.RequestError as e:
+        speak("Speech recognition is unavailable.")
+        print("Error:", e)
+    return None
+
+def wait_for_wake_word(wake_word="hey glasses"):
+    print("👂 Waiting for wake word...")
+    while True:
+        with mic as source:
+            recognizer.adjust_for_ambient_noise(source)
+            try:
+                audio = recognizer.listen(source, timeout=15, phrase_time_limit=5)
+            except sr.WaitTimeoutError:
+                continue
+
+        try:
+            text = recognizer.recognize_google(audio).lower()
+            print("Heard:", text)
+            if wake_word in text:
+                speak("Yes?")
+                return
+        except sr.UnknownValueError:
+            continue
+        except sr.RequestError as e:
+            print("Error with speech recognition:", e)
+            continue
+
+def run_mode(mode):
+    if mode == "distance":
+        speak("Entering distance mode.")
+        object_detect_tts.run_distance_mode()
+
+    elif mode == "object":
+        speak("Entering object detection mode.")
+        pitft_labeled_output.run_object_mode()
+
+    elif mode == "weather":
+        speak("Fetching weather alerts.")
+        weather_alerts.run_weather_mode()
+
+    elif mode == "gemini":
+        speak("Opening Gemini Assistant.")
+        from gemini import GeminiAssistant
+        assistant = GeminiAssistant(api_key="YOUR_API_KEY")  # Replace with actual key
+
+        while True:
+            reply = assistant.ask_once()
+            if reply == "exit":
+                break
+            if not reply:
+                assistant.speak("Repeat that.")
+            else:
+                break  # Exit after one successful answer
+
+    elif mode == "navigation":
+        speak("Opening Navigation system.")
+        navigation_mode = NavigationMode()
+        navigation_mode.run()
+
+    else:
+        speak(f"I don't recognize the mode: {mode}")
+
+if __name__ == "__main__":
+    speak("Voice Mode Switcher is active.")
+    try:
+        while True:
+            wait_for_wake_word()
+            mode = listen_with_timeout()
+            if mode is None:
+                continue
+            if any(word in mode for word in ["quit", "exit", "stop"]):
+                speak("Goodbye.")
+                break
+            run_mode(mode)
+    except KeyboardInterrupt:
+        speak("Exiting.")
+
+```
 # Bill of Materials
 <!--- Here's where you'll list the parts in your project. To add more rows, just copy and paste the example rows below.
 Don't forget to place the link of where to buy each component inside the quotation marks in the corresponding row after href =. Follow the guide [here]([url](https://www.markdownguide.org/extended-syntax/)) to learn how to customize this to your project needs. -->
+
+
 
 | **Part** | **Note** | **Price** | **Link** |
 |:--:|:--:|:--:|:--:|

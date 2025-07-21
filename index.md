@@ -899,18 +899,23 @@ class GeminiAssistant:
         genai.configure(api_key=self.api_key)
         self.model = genai.GenerativeModel('gemini-1.5-flash')
 
-        # === INIT gTTS and Pygame ===
-        pygame.mixer.init()
+        # === INIT pygame safely ===
+        pygame.mixer.init(frequency=22050)
 
     def speak(self, text):
         print("🤖 Gemini says:", text)
         tts = gTTS(text=text, lang='en')
-        with tempfile.NamedTemporaryFile(delete=True, suffix='.mp3') as fp:
-            tts.save(fp.name)
-            pygame.mixer.music.load(fp.name)
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.mp3') as fp:
+            temp_path = fp.name
+            tts.save(temp_path)
+
+        try:
+            pygame.mixer.music.load(temp_path)
             pygame.mixer.music.play()
             while pygame.mixer.music.get_busy():
-                continue
+                pygame.time.Clock().tick(10)
+        finally:
+            os.remove(temp_path)
 
     def listen(self):
         recognizer = sr.Recognizer()
@@ -954,76 +959,17 @@ class GeminiAssistant:
             print("❌ Error from Gemini:", e)
             self.speak("Something went wrong talking to Gemini.")
             return None
+if __name__ == "__main__":
+    API_KEY = "AIzaSyC6O8dLHqXwgndSmbQVnZuZULSg6XZRJXc"  # 👈 Replace with your real key
+    assistant = GeminiAssistant(API_KEY)
+    while True:
+        result = assistant.ask_once()
+        if result == "exit":
+            break
+
  
 ```
-**old gemini code**
-```shell
-import google.generativeai as genai
-import speech_recognition as sr
-import pyttsx3
 
-class GeminiAssistant:
-    def __init__(self, api_key):
-        # === CONFIG ===
-        self.api_key = api_key
-
-        # === INIT Gemini ===
-        genai.configure(api_key=self.api_key)
-        self.model = genai.GenerativeModel('gemini-1.5-flash')
-
-        # === INIT TTS ===
-        self.engine = pyttsx3.init()
-        self.engine.setProperty("rate", 150)
-
-    def speak(self, text):
-        print("🤖 Gemini says:", text)
-        self.engine.say(text)
-        self.engine.runAndWait()
-
-    def listen(self):
-        recognizer = sr.Recognizer()
-        mic = sr.Microphone()
-        print("🎤 Listening... Speak now!")
-        with mic as source:
-            recognizer.adjust_for_ambient_noise(source)
-            try:
-                audio = recognizer.listen(source, timeout=5, phrase_time_limit=10)
-            except sr.WaitTimeoutError:
-                print("⏰ Listening timed out.")
-                return None
-
-        try:
-            query = recognizer.recognize_google(audio)
-            print("You asked:", query)
-            return query
-        except sr.UnknownValueError:
-            self.speak("Sorry, I couldn't understand you.")
-        except sr.RequestError as e:
-            self.speak("Speech recognition is unavailable.")
-            print("Error:", e)
-
-        return None
-
-    def ask_once(self):
-        user_input = self.listen()
-        if not user_input:
-            return None
-
-        if user_input.lower() in ["stop", "exit", "quit"]:
-            self.speak("Goodbye!")
-            return "exit"
-
-        try:
-            response = self.model.generate_content(user_input)
-            reply = response.candidates[0].content.parts[0].text
-            self.speak(reply)
-            return reply
-        except Exception as e:
-            print("❌ Error from Gemini:", e)
-            self.speak("Something went wrong talking to Gemini.")
-            return None
-
-```
 **object detcetion code**
 ```shell
 # object_detection_runner.py

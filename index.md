@@ -11,8 +11,10 @@ I built a pair of smart glasses that help visually impaired users navigate their
 
 
 <img src="SaanviG (1).png" alt="Headshot" height="500" width="300">
+# Fifth Milestpne
+For my fifth milestone, I attached everything to my glasses and also created a fan that can cool you down when using these glasses
 # Fourth Milestone
-For my fourth milestone, I added a voice changer mode that would switch between all the modification: weather alerts, obstacle detection (with the ultraosnic sensor), object detection, and navigation. 
+For my fourth milestone, I added a voice changer mode that would switch between all the modification: weather alerts, obstacle detection (with the ultraosnic sensor), object detection,button camera and navigation. 
 -->
 # Third Milestone
 <iframe width="560" height="315" src="https://www.youtube.com/embed/c_jwYHTCRQo?si=JgL7zhWAZ2tKjFEF" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>

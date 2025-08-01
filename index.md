@@ -12,7 +12,7 @@ I built a pair of smart glasses that help visually impaired users navigate their
 
 <img src="SaanviG (1).png" alt="Headshot" height="500" width="300">
 # Fifth Milestpne
-For my fifth milestone, I attached everything to my glasses and also created a fan that can cool you down when using these glasses
+For my fifth milestone, I attached everything to my glasses and also created a fan that can cool you down when using these glasses howveever its a reverse fan where it blows air from the other way so it would be easier to use on the glasses
 # Fourth Milestone
 For my fourth milestone, I added a voice changer mode that would switch between all the modification: weather alerts, obstacle detection (with the ultraosnic sensor), object detection,button camera and navigation. 
 -->

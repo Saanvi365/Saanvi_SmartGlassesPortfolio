@@ -9,8 +9,8 @@ I built a pair of smart glasses that help visually impaired users navigate their
 | Saanvi G | Leland | Electrical/Computer Engineering | Incoming Senior
 
 
-![Headstone Image](SaanviG(1).png)
-<img src="SaanviG.hsvg" alt="Headshot" height="400" width="500">
+![Headstone Image](SaanviG (1).png)
+<img src="SaanviG (1).png" alt="Headshot" height="400" width="500">
 # Fourth Milestone
 For my fourth milestone, I added a voice changer mode that would switch between all the modification: weather alerts, obstacle detection (with the ultraosnic sensor), object detection, and navigation. 
 -->
